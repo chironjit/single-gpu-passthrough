@@ -28,19 +28,23 @@ As is likely with most people, you will likely have only a single GPU in your sy
 
 - I wrote this guide as a note for myself, but also to help anyone in a similar situation. It has been culled from different passthrough guides (see Credits).
 
-- Please note that there are more comprehensive guides available (see Credits) for you to follow and learn about GPU passthrough, as well as doing it on different hardwares, OS (even if the base distro is the same) and different boot environments (GRUB vs systemd for example).
+- Please note that there are more comprehensive guides available (see Credits) for you to follow and learn about GPU passthrough, as well as doing it on different hardwares, OSs (even if the base distro is the same) and different boot environments (GRUB vs systemd for example).
 
-- This method will shut down your display manager and make your host lose its session even if you have more than one GPU. I have tried every other means of passthrough guide available and only this one works for me specifically currently. All guides I have seen have lead me to belive that you can't unbind your GPU from the display manager without shutting down the display manager.
+- This method will shut down your display manager and make your host lose its session even if you have more than one GPU. I have tried every other passthrough guide available and only this one works for me specifically. All guides I have seen have lead me to believe that you can't unbind your GPU from the display manager without shutting down the display manager.
 
 - Some may notice that I have a second graphics card in my system. It is used to power my second monitor. However, due to the age of the card, it is not possible to utilise this as the primary card for the Linux system. It should make no difference on being able to passthrough your main card.
+
+- I am using the default display manager that comes with Pop OS (Gnome Display Manager).
+
+- This may also work if you have an integrated GPU with an Nvidia dedicated GPU or an Optimus setup but your mileage may vary
 
 ## Credits
 
 Credits always end up in the bottom of a guide, but I have to note that in this case, everything I am about to write here has been culled from other guides. The reason for writing this guide is that each of the guides have some end result which did not neatly match mine, and I'm adding my bit to improve the experience for others. That said, credits go to these sites / persons:
 
-1. <b>Bryan Steiner and his excellent [GPU Passthrough Tutorial](https://github.com/bryansteiner/gpu-passthrough-tutorial)</b> <br />This gets first mention as it was the guide that got me thinking I could do this (oh boy!). It was elegently written and well documented. Unfortunately one factor I realised (too late) is that Bryan does not use his NVidia GPU for video output, and only has it set to compute. This is a small but very key factor - if you use your card for video output, you will not be able to unbind the GPU if you use his method (at least I couldn't). This is however still the most thorough and succint guide and most of the non-GPU sections are actually culled from his guide.
+1. <b>Bryan Steiner and his excellent [GPU Passthrough Tutorial](https://github.com/bryansteiner/gpu-passthrough-tutorial)</b> <br />This gets the first mention as it was the guide that got me thinking that I could do this (oh boy!). It was elegently written and well documented. Unfortunately one factor I realised (too late) is that Bryan does not use his Nvidia GPU for video output, and only has it set to compute. This is a small but very key factor - if you use your card for video output, you will not be able to unbind the GPU if you use his method (at least I couldn't). This is however still the most thorough and succint guide and most of the non-GPU sections are actually culled from his guide.
 
-2. <b>[Heiko Seiger](https://heiko-sieger.info/)'s guides at his blog</b><br />Heiko Seiger's guides just work. The guides are great as he walks you through passing through the GPU by removing it from the host OS and reserving it for the guest (VM). There are also pictures of bios settings, etc that will help you through the way. The only reason why this does not work for me is that all the resources are reserved and cannot be used by the host, which is not possible for me.
+2. <b>[Heiko Seiger](https://heiko-sieger.info/)'s guides at his blog</b><br />Heiko Seiger's guides just work. The guides are great as he walks you through passing through the GPU by removing it from the host OS and reserving it for the guest (VM). There are also pictures of bios settings etc. that will help you through the way. The only reason why this does not work for me is that all the resources are reserved and cannot be used by the host, which is not possible for me.
 
 3. <b>Joe Knockenhauer's [Single GPU Passthrough](https://github.com/joeknock90)</b><br />I used his single GPU passthrough setup to guide to finally get this working. All the GPU passthrough scripts are basically from his guide.
 
@@ -63,7 +67,7 @@ The following is my hardware setup:
   GPU:            NVidia GTX 1070 8GB
 ```
 
-Monitors:
+Monitor:
 
 ```
  G-Sync monitor attached to Nvidia card
@@ -80,9 +84,9 @@ Software:<br />
 
 The first and foremost step you have to follow is to check if virtualisation is enabled on your device. You have to, at a minimum, enable SVM and IOMMU in your bios settings. The other settings are good to have - if you don't see them, you may still be able to passthrough your hardware (though your mileage may vary). You will have to dig in through the menus of your board as the layout of the menu changes even through boards and generations (for example, my previous Gigabyte B450 board had a very different layout to the current one).
 
-Also note that some bios versions may enable or disable certain functionalities in the latest bios, such as AER and ARI settings. This happened in the b450 board, and so you may want to roll back one generation if the latest bios is not needed for you (for example if the newer bios is just there for adding compatibility of newer CPUs)
+Also note that some bios versions may enable or disable certain functionalities in the latest bios, such as AER and ARI settings. This happened in the b450 board, and so you may want to roll back one generation if the latest bios is not needed for you (for example if the newer bios is just there for adding compatibility of newer CPUs).
 
-I enabled the following settings in my bios. Please ensure that the setting is set to Enable and not Auto:
+I enabled the following settings in my bios. Please ensure that the settings are set to **Enabled** and ***not*** Auto:
 
 ```
 Tweak
@@ -99,11 +103,11 @@ Settings
         └── Enable AER Cap -> Enabled
 ```
 
-Save and Exit bios<br />
+Save and exit bios.<br />
 
-Please note that some of the AMD CBS settings may not be actually required for the passthrough, but I enabled them anyway and have had no issues. Again do not worry if you don't have all the options. You can log in and try anyway.
+Please note that some of the AMD CBS settings may not be actually required for the passthrough, but I enabled them anyway and have had no issues. Again do not worry if you don't have all the options. You can go ahead and try anyway.
 
-### Check & Prep your OS [Source: Steiner]
+### Check & Prep your OS
 
 Check for IOMMU support: `dmesg | grep IOMMU`
 
@@ -137,12 +141,11 @@ Pass the hardware-enabled IOMMU functionality into the kernel as a kernel parame
 
 `sudo kernelstub --add-options "amd_iommu=on"`
 
-Install all required packages: <br />
-`sudo apt install libvirt-daemon-system libvirt-clients qemu-kvm qemu-utils virt-manager ovmf`
+Install all required packages: <br />`sudo apt install libvirt-daemon-system libvirt-clients qemu-kvm qemu-utils virt-manager ovmf`
 
 I'd suggest at this point to `reboot`
 
-Check for iommu groupings:
+Check for IOMMU groupings:
 
 ```
 #!/bin/bash
@@ -155,7 +158,7 @@ for g in /sys/kernel/iommu_groups/*; do
 done;
 ```
 
-This is my output. Any hardware you want to passthrough to your VM must be in its own group. You must passthrough all hardware in your group, excepting dummy, non hardware entries such as PCI bridge.
+This is my output. Any hardware you want to passthrough to your VM must be in its own group. You must passthrough all hardware in your group, except for dummy, non hardware entries such as PCI bridge.
 
 ```
 IOMMU Group 0:
@@ -244,33 +247,30 @@ Note that these are the things I want to passthrough:
 - GPU (Group 24)
 - Sata Controller (Group 20 or 21)
 
-If your groups are not neatly divided, you can utilise the ACS patch - I would suggest reviewing Bryan Steiner's Guide on this. Other than the GPU, passing through all the other items are optional for GPU passthrough.
+If your groups are not neatly divided, you can utilise the ACS patch - I would suggest reviewing Steiner's guide (see Credits) on this. Other than the GPU, passing through all the other items are optional for GPU passthrough.
 
 ### NOTE:
 
-At this point - the guide steps differs from the other guides in one fundamental way. Given the various issues you may face in passing through your GPU, I suggest following Joe Knockenhauer's point of creating a working VM first BEFORE attempting any kind of GPU passthrough. I have already tried passing through my other devices several times, and so I will start with that.
+At this point the guide steps differ from the other guides in one fundamental way. Given the various issues you may face in passing through your GPU, I suggest following Joe Knockenhauer's point of creating a working VM first ***before*** attempting any kind of GPU passthrough. I have already tried passing through my other devices several times, and so I will start with that.
 
 ### ! Important.
 
-From this point on, there will be fundamental changes, and issues you will have to be mindful of as you move along. For example, you can choose not to pass through USB, BUT that will mean that when you passthrough your GPU, you will have no way of controlling your VM. This is a catch 22 for most systems where you cannot passthrough your USB for one reason or another. 
+From this point on, there will be fundamental changes, and issues you will have to be mindful of as you move along. For example, you can choose not to pass through neither USB devices (keyboard and mouse) nor a USB Controller, BUT that will mean that when you passthrough your GPU, you will have no way of controlling your VM. This is a catch-22 for most systems if you cannot passthrough your USB for one reason or another. 
 
-*For USB devices however, you can actually passthrough USB specific USB devices*
+***Note that you can actually passthrough specific USB devices and do not necessarily need to pass through a whole controller.***
 
 ## Hooks & Device Passthrough
 
 We will begin prepping for the passthrough by creating the hooks.
 
-Install the hook helper tool
+Install the Hook Helper tool:
 
 ```
 sudo wget 'https://raw.githubusercontent.com/PassthroughPOST/VFIO-Tools/master/libvirt_hooks/qemu' \
      -O /etc/libvirt/hooks/qemu
 ```
 
-`sudo chmod +x /etc/libvirt/hooks/qemu`
-
-Restart Libvirt
-`sudo service libvirtd restart`
+Convert to executable `sudo chmod +x /etc/libvirt/hooks/qemu` then restart **Libvirt** `sudo service libvirtd restart`.
 
 Change over to the Libvirt hooks folder: `cd /etc/libvirt/hooks`. Running `ls -a` shows that there is only one folder `qemu` in the folder. Create the following folders:
 
@@ -297,9 +297,9 @@ The output should be as follows:
             └── end
 ```
 
-Change over to the begin folder `cd qemu.d/win10/prepare/begin`
+Change over to the **begin** folder `cd qemu.d/win10/prepare/begin`
 
-Start nano in sudo via `sudo nano`
+Start the Nano file editor in sudo via `sudo nano`
 
 Paste in your script:
 
@@ -324,9 +324,9 @@ virsh nodedev-detach pci_0000_04_00_0
 virsh nodedev-detach pci_0000_08_00_0
 ```
 
-Note that for each PCIe device you're passing through, convert colons and dots to underscore like these: `07:00.0` -> `0000_07_00_00` or `06:00.3` -> `0000_06_00_03`.  ***You have to put in YOUR own device's pci ID.***
+Note that for each PCI device you're passing through, convert colons and dots to underscore like these: `07:00.0` -> `0000_07_00_00` or `06:00.3` -> `0000_06_00_03`.  ***You have to put in YOUR own device's pci id.***
 
-For Group 21 (SATA Controller), we do not need to pass through the PCI Bridge
+For Group 21 (SATA Controller), we do ***not*** need to pass through the PCI bridge
 
 ```
 IOMMU Group 21:
@@ -334,17 +334,17 @@ IOMMU Group 21:
     08:00.0 SATA controller [0106]: Advanced Micro Devices, Inc. [AMD] FCH SATA Controller [AHCI mode] [1022:7901] (rev 51)
 ```
 
-Press Ctrl + O to save. Name the file any name ending with .sh. I named mine `unbind.sh`. Exit nano by pressing Ctrl + X
+Press **Ctrl + O** to save. Name the file any name ending with .sh. I named mine `unbind.sh`. Exit nano by pressing **Ctrl + X**
 
 You need to make the file executable by typing the following `sudo chmod +x unbind.sh`.
 
-Change the folder to the end folder:
+Change the folder to the **end** folder:
 
 ```
 cd /etc/libvirt/hooks/qemu.d/win10/release/end
 ```
 
-Start nano again using `sudo nano`
+Start Nano again using `sudo nano`
 
 ```
 #!/bin/bash
@@ -361,9 +361,9 @@ modprobe -r vfio_iommu_type1
 modprobe -r vfio
 ```
 
-Save using Ctrl + O. As before name the file with something ending with .sh. I have named mine `rebind.sh`.
-Exit nano using Ctrl + X
-Convert end.sh into executable using `sudo chmod +x rebind.sh`
+Save using **Ctrl + O**. As before name the file with something ending with .sh. I have named mine `rebind.sh`.
+Exit Nano using **Ctrl + X**
+Convert `end.sh` into executable using `sudo chmod +x rebind.sh`
 
 Check that your folder and files are in the following order:
 ```tree /etc/libvirt/hooks```
@@ -382,93 +382,93 @@ Check that your folder and files are in the following order:
                 └── rebind.sh
 ```
 
-Thats it for the scripts(sans any GPU passthrough settings).
+That's it for the scripts (sans any GPU passthrough settings).
 
 ## VM WITHOUT GPU Passthrough
 
-Its now time to create the Windows VM.
+It's now time to create your Windows VM without the GPU passtrough.
 
 Go to your <b>Virtual Machine Manager (Virtman)</b>:
 
-<img title="" src="./img/virtman.png" alt="Virtman" data-align="center">
+<p align="center"><img title="" src="./img/virtman.png" alt="Virtman"></p>
 
-First and foremost, if this is your first time creating a VM, go to Preferences and select Enable XML Settings under the General tab
+First and foremost, if this is your first time creating a VM, go to **Edit**, then **Preferences** and select **Enable XML Settings** under the **General** tab.
 
-<img title="" src="./img/enable_xml_edit.png" alt="" data-align="center">
+<p align="center"><img title="" src="./img/enable_xml_edit.png" alt=""></p>
 
-Now click on Create a new virtual machine. Select local install
+Now click on **Create a new virtual machine**. Select **local install**.
 
-<img src="./img/local_install.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/local_install.png" title="" alt=""></p>
 
-Click browse and select your Windows 10 ISO file. It is recommended that you do not rename your windows 10 iso - this way Virtman recognises the ISO as being a Windows 10 OS and select the operating system automatically. If it doesn't detect it, uncheck the *Automatically detect* box and just start typing and it will show windows 10 as an option.
+Click **Browse** and select your Windows 10 ISO file. It is recommended that you do not rename your Windows 10 ISO file - this way **Virtman** recognises the ISO as being a Windows 10 OS and will select the operating system automatically. If it doesn't detect it, uncheck the **Automatically detect** check box and just start typing 'Windows' and it will show Windows 10 as an option.
 
-<img src="./img/choose_install_media.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/choose_install_media.png" title="" alt=""></p>
 
-Select the amount of RAM you would like to passthrough as well as the number of CPUs. In this case, the maximum number of CPU's is actually the number of threads. You may want to keep some for the host system, especially if you are doing a passthrough of your CPU (see later in this section)
+Select the amount of RAM you would like to passthrough as well as the number of CPUs. In this case, the maximum number of CPU's is actually the number of threads. You may want to keep some for the host system, especially if you are doing a *host passthrough* of your CPU (see later in this section).
 
-<img src="./img/cpu_and_ram.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/cpu_and_ram.png" title="" alt=""></p>
 
-Select your storage option and the appropriate size. The image shows the default option but I have unchecked it as I am aiming to pass through a SATA controller.
+Select your storage option and the appropriate size. The image shows the default option (which you would use if you are not passing through an SSD / NVMe / HDD). I have unchecked mine as I am aiming to pass through the whole SATA Controller (with its attached SATA drive).
 
-<img src="./img/enable_storage.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/enable_storage.png" title="" alt=""></p>
 
-In this section, check that the Name of the VM is `win10` specifically. This is important as Qemu will look up the hooks according to the name of the vm (of which we created the win10 folder and the hooks within the folders). Ensure that you select `Customise configuration before install` as you will need to make additional changes before starting the VM. Select Finish
+In this section, check that the **Name** of the VM is `win10` specifically. This is important as Qemu will look up the hooks according to the name of the VM (of which we created the `win10` folder and the hooks within this folder). Ensure that you select **Customise configuration before install** as you will need to make additional changes before starting the VM. Select **Finish**.
 
-<img title="" src="./img/vm_name.png" alt="" data-align="center">
+<p align="center"><img src="./img/vm_name.png" title="" alt=""></p>
 
-You will now be in the settings section. The first thing to do is change the Firmware from BIOS to OVMF_CODE.fd. Click Apply
+You will now be in the settings section. The first thing to do is change the **Firmware** from `BIOS` to `OVMF_CODE.fd`. Click **Apply**.
 
-<img src="./img/bios_to_ovmf.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/bios_to_ovmf.png" title="" alt=""></p>
 
-Go to the CPUs section and uncheck Copy Host CPU configuration. Under the model, type in `host-passthrough` and click Apply
+Go to the CPUs section and uncheck **Copy Host CPU configuration**. Under **Model**, type in `host-passthrough` and click **Apply**.
 
-<img src="./img/cpu_passthrough.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/cpu_passthrough.png" title="" alt=""></p>
 
-Go to Boot Options and select Enable boot menu, ensure that SATA Disk1 as well CDROM 1 is selected. Move the HDD up to the first position. Click Apply
+Go to **Boot Options** and select **Enable boot menu**, ensure that `SATA Disk 1` as well `SATA CDROM 1` is selected. Move the `Sata Disk 1` up to the first position. Click **Apply**.
 
-<img src="./img/boot_options.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/boot_options.png" title="" alt=""></p>
 
-For now, I have left all the remaining items except Tablet(to remove, right click and select Remove Hardware). You can leave it in.
+For now, I have left all the remaining items except **Tablet** (to remove, right click and select **Remove Hardware**). You can leave it in.
 
-Now to add the hardware we are adding. Click on Add hardware
+Now to add the hardware we are adding. Click on **Add Hardware**.
 
-<img src="./img/add_hardware.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/add_hardware.png" title="" alt=""></p>
 
-Go to PCI Host Device, select the first item you are adding and click Finish. repeat this for all the other hardware you are adding. You should now see in the left section all the items you have added.
+Go to **PCI Host Device**, select the first item you are adding and click **Finish**. Repeat this for all the other hardware you are adding. You should now see in the left section all the items you have added.
 
-<img src="./img/add_hardware_2.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/add_hardware_2.png" title="" alt=""></p>
 
-Note, if you are not passing through a full USB Controller, you can pass through individual USB connections. See the section on passing through USB devices on Steiner's guide for more information.
+Note, if you are not passing through a full USB Controller, you can pass through individual USB devices (see below). See the section on passing through USB devices on Steiner's guide for more information.
 
-<img src="./img/passthrough_usb_device.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/passthrough_usb_device.png" title="" alt=""></p>
 
 This is how it should look now:
 
-<img src="./img/example_device_added.png" title="" alt="Example of Added Device" data-align="center">
+<p align="center"><img src="./img/example_device_added.png" title="" alt="Example of Added Device"></p>
 
 We should theoretically be ready to start the VM now. 
 
-Go ahead and select *Begin Installation*. At this point, if you have done everything right, you should see a pop up and a few seconds later a window that opens up with TianoCore in the Splash Screen. Press any key to enter into the Windows Install once you see the prompt and you can now proceed to install Windows in your VM.
+Go ahead and select **Begin Installation**. At this point, if you have done everything right, you should see a pop up and a few seconds later a window that opens up with TianoCore in the Splash Screen. Press any key to enter into the Windows setup once you see the prompt and you can now proceed to install Windows in your VM.
 
-<img src="./img/tiano_core_load.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/tiano_core_load.png" title="" alt=""></p>
 
-<img src="./img/boot_into_win_cd.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/boot_into_win_cd.png" title="" alt=""></p>
 
-<img src="./img/install_windows.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/install_windows.png" title="" alt=""></p>
 
 ## GPU Passthrough Settings & Setup
 
-Ok, now that your VM successfully runs (make sure to test it a few times - it should not hang when you unbind or rebind), its time to finally get to the main party of this tutorial - passing through the GPU.
+Ok, now that your VM successfully runs (make sure to test it a few times - it should not hang when you unbind or rebind), it's time to finally get to the main part of this tutorial - passing through the GPU.
 
 ### Getting ROM for your card and including it on boot
 
-Before you start this section, you should have your device bios ready. I looked up my bios via the Techpowerup [GPU Database](https://www.techpowerup.com/gpu-specs/) (thanks to a guide by SpaceInvader One's [How to easily passthough a Nvidia GPU as primary without dumping your own vbios! in KVM unRAID - YouTube](https://www.youtube.com/watch?v=1IP-h9IKof0)) but there are several ways you can approach this. I would suggest visiting [Joe's guide on patching the GPU ROM for this](https://github.com/joeknock90/Single-GPU-Passthrough#patching-the-gpu-rom-for-the-vm) as it has most of the ways you can use. One you have your ROM ready, the following sections will walk you through the rest of the process.
+Before you start this section, you should have your device bios ready. I looked up my bios via the Techpowerup [GPU Database](https://www.techpowerup.com/gpu-specs/) (thanks to a guide by SpaceInvader One's [How to easily passthough a Nvidia GPU as primary without dumping your own vbios! in KVM unRAID - YouTube](https://www.youtube.com/watch?v=1IP-h9IKof0)) but there are several ways you can approach this. I would suggest visiting [Joe's guide on patching the GPU ROM for this](https://github.com/joeknock90/Single-GPU-Passthrough#patching-the-gpu-rom-for-the-vm) as it has most of the ways you can use. Once you have your ROM ready, the following sections will walk you through the rest of the process.
 
 ### Editing the hooks
 
-We go back to the original `unbind.sh` and `rebind.sh` scripts to now add in our GPU scripts
+We go back to the original `unbind.sh` and `rebind.sh` scripts to now add in our GPU scripts.
 
-First, edit the `unbind.sh` file
+First, edit the `unbind.sh` file.
 
 ```
 cd /etc/libvirt/hooks/qemu.d/win10/prepare/begin
@@ -511,7 +511,7 @@ virsh nodedev-detach pci_0000_09_00_0
 virsh nodedev-detach pci_0000_09_00_1
 ```
 
-Please note that you should change your display driver pci id accordingly, as per your IOMMU groupings. Mine is below, and you will notice that you have to passthrough both the controller (09:00.0) and the audio device on the graphics card (09:00.1). Please ensure you pass through all your GPU devices that sit under this group.
+Please note that you should change your display driver pci id accordingly, based on your IOMMU groupings. Mine is below, and you will notice that you have to pass through both the controller (`09:00.0`) and the audio device on the graphics card (`09:00.1`). Please ensure you pass through all your GPU devices that sit under this group.
 
 ```
 IOMMU Group 24:
@@ -519,7 +519,7 @@ IOMMU Group 24:
     09:00.1 Audio device [0403]: NVIDIA Corporation GP104 High Definition Audio Controller [10de:10f0] (rev a1)
 ```
 
-Your full `unbind.sh` file should now look like this(cleaned up):
+Your full `unbind.sh` file should now look like this (cleaned up):
 
 ```
 #!/bin/bash
@@ -568,9 +568,9 @@ virsh nodedev-detach pci_0000_04_00_0
 virsh nodedev-detach pci_0000_08_00_0
 ```
 
-Press Ctrl + O and Enter to save and the Ctrl + X to exit
+Press **Ctrl + O** and **Enter** to save and then **Ctrl + X** to exit.
 
-Now time to edit the `rebind.sh` file
+Now time to edit the `rebind.sh` file.
 
 ```
 cd /etc/libvirt/hooks/qemu.d/win10/release/end
@@ -580,14 +580,14 @@ cd /etc/libvirt/hooks/qemu.d/win10/release/end
 sudo nano rebind.sh
 ```
 
-Paste the following below the `## Re-Bind all devices` section
+Paste the following below the `## Re-Bind all devices` section,
 
 ```
 virsh nodedev-reattach pci_0000_09_00_0
 virsh nodedev-reattach pci_0000_09_00_1
 ```
 
-and the following below the  `## Unload vfio` section
+and the following below the  `## Unload vfio` section.
 
 ```
 # Rebind VT consoles
@@ -606,7 +606,7 @@ modprobe nvidia
 systemctl start display-manager.service
 ```
 
-Your cleaned up `rebind.sh` file should look like this
+Your cleaned up `rebind.sh` file should look like this:
 
 ```
 #!/bin/bash
@@ -640,29 +640,29 @@ modprobe nvidia
 systemctl start display-manager.service
 ```
 
-Again save by pressing Ctrl + O and then Enter and then exit by pressing Ctrl + X
+Again save by pressing **Ctrl + O** and then **Enter** and then exit by pressing **Ctrl + X**.
 
 ### Including GPU into VM
 
 #### Add device
 
-Now you are ready to add your GPU to your VM. Open up Virtman. 
+Now you are ready to add your GPU to your VM. Open up **Virtman**. 
 
-<img title="" src="./img/virtman_with_win10.png" alt="" data-align="center">
+<p align="center"><img src="./img/virtman_with_win10.png" title="" alt=""></p>
 
-Click on your Windows 10 VM and then click ***Open*** on the menu above. 
+Click on your Windows 10 VM and then click ****Open**** on the menu above. 
 
-<img src="./img/win10_not_running.png" title="" alt="" data-align="center">
+<p align="center"><img src="./img/win10_not_running.png" title="" alt=""></p>
 
 You will see the blank window above. Click on the ***i*** button to show the settings.
 
-![](./img/add_gpu.png)
+<p align="center"><img src="./img/add_gpu.png" title="" alt=""></p>
 
-Click on **Add Hardware** and add the 2 devices associated with your GPU. Please ensure that you passthrough all the devices in your GPU.
+Click on **Add Hardware** and add the 2 devices associated with your GPU. Please ensure that you add all the devices in your GPU (you may have more than 2).
 
 #### Remove other displays
 
-Remove **Display Spice** and **Video QXL** (right click on the device and select remove).
+Remove **Display Spice** and **Video QXL** (right click on the device and select **Remove**).
 
 #### Add ROM File
 
@@ -674,13 +674,15 @@ Copy your ROM file to the folder.
 sudo cp -v -i '/home/yourusername/gtx1070_modified.rom' /usr/share/vgabios/gtx1070_modified.rom
 ```
 
-(the above command is copying the modified ROM file in my Home folder to the vgabios folder. Change the line `/home/yourusername/gtx1070_modified.rom` to whereever your ROM is stored and also the name of the file. The file does not need to have a specific name. Also, your file may be either a `.rom` or `.bin`, which should be fine.
+(the above command is copying the modified ROM file in my `Home` folder to the `vgabios` folder. Change the line `/home/yourusername/gtx1070_modified.rom` to where ever your ROM is stored and also the name of the file).
 
-Go back to your Virtman. Select your GPU device (the main one - it usually is the one ending with 0). 
+The file does not need to have a specific name. Also, your file may be either a `.rom` or `.bin`, which should be fine.
 
-![](./img/add_rom_file.png)
+Go back to your **Virtman**. Select your GPU device (the main one only - it usually is the one ending with 0). 
 
-Add the following line:
+<p align="center"><img src="./img/add_rom_file.png" title="" alt=""></p>
+
+Add the following line (edit the name of your file):
 
 ```
 <rom file='/usr/share/vgabios/gtx1070_modified.rom'/>
@@ -695,13 +697,13 @@ to the XML (see picture above)
 </hostdev>
 ```
 
-Click **Apply**
+Click **Apply**.
 
 #### Edit XML Script
 
-You're almost ready to launch the VM with your GPU passed through, but one last set of items to edit
+You're almost ready to launch the VM with your GPU passed through, but one last set of items to edit.
 
-Navigate back to Overview in the settings of Virtman. Click on the XML tab.
+Navigate back to **Overview** in the settings of **Virtman**. Click on the **XML** tab.
 
 Add the following lines:
 
@@ -740,7 +742,7 @@ and finally
   </features>
 ```
 
-Your <features> section should thus look like this:
+Your <features> section should now look like this:
 
 ```
   <features>
@@ -778,15 +780,17 @@ To go back to Linux, just shut down your Windows, and Libvirt should automatical
 
 1. Before proceeding to the GPU section, ensure that your USB passthrough works correctly. Whether you are passing through your USB devices or your whole USB controller, you should check that it works correctly. If you accidentally forget this part, and your USB does not work, you will just have to reset your PC to exit.
 
-2. The fastest way to get your ROM is to get it from the Techpowerup site. Often, ROMs on this site already have the bios already edited but your mileage may vary. Please note that you should look up your exact device and revision as there are differences between brands, AND revisions of the same model.
+2. The fastest way to get your ROM is to get it from the Techpowerup site. Often, ROMs on this site already have the bios edited but your mileage may vary. Please note that you should look up your exact device and revision as there are differences between brands, AND revisions of the same model.
 
 3. You can theoretically [leave applications in Linux running in the background while on your VM](https://github.com/joeknock90/Single-GPU-Passthrough#note), but this is not advisable.
 
-4. You can store your ROM in a different folder than the one suggested, but this may sometimes be an issue. If you get an error along the lines of [failed to find / load romfile](https://github.com/joeknock90/Single-GPU-Passthrough#failed-to-findload-romfile), then this is likely to be the cause.
+4. You can store your ROM in a different folder than the one suggested, but this may sometimes be an issue. If you get an error along the lines of [failed to find / load romfile](https://github.com/joeknock90/Single-GPU-Passthrough#failed-to-findload-romfile) (in your log file, see pointer number 6), then this is likely to be the cause.
 
 5. At this point, this guide does not include optimisations for your VM. The section on [improving VM performance](https://github.com/bryansteiner/gpu-passthrough-tutorial#----part-4-improving-vm-performance) in Steiner's guide is a good place to get some optimisation tips and tricks.
 
 6. If you run into issues, you can check the log file at `nano /var/log/libvirt/qemu/win10.log` to see if it has helpful pointers. 
+
+7. You can change the boot order after having installed Windows in your VM.
 
 ## Conclusion
 
